@@ -1,14 +1,24 @@
 [project]
-name = "codespaces-blank"
-version = "0.1.0"
+dependencies = [
+  "beautifulsoup4>=4.13.3",
+  "ipykernel>=6.29.5",
+  "loguru>=0.7.3",
+  "pre-commit>=4.1.0",
+  "requests>=2.32.3",
+  "setuptools>=75.8.0",
+  "undetected-chromedriver>=3.5.5"
+]
 description = "Add your description here"
+name = "codespaces-blank"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = [
-    "beautifulsoup4>=4.13.3",
-    "ipykernel>=6.29.5",
-    "loguru>=0.7.3",
-    "requests>=2.32.3",
-    "setuptools>=75.8.0",
-    "undetected-chromedriver>=3.5.5",
-]
+version = "0.1.0"
+
+[tool.interrogate]
+exclude = ["tests", "setup.py", "docs", "notebooks", "__init__.py", "src/sunray/packages"]
+fail-under = 90
+ignore-init-method = true
+ignore-init-module = true
+ignore-regex = []
+verbose = 1
+whitelist-regex = []
