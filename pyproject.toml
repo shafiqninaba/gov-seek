@@ -6,7 +6,7 @@ dependencies = [
   "pre-commit>=4.1.0",
   "requests>=2.32.3",
   "setuptools>=75.8.0",
-  "undetected-chromedriver>=3.5.5"
+  "tqdm>=4.67.1"
 ]
 description = "Add your description here"
 name = "codespaces-blank"
