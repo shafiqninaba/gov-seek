@@ -3,6 +3,7 @@
 from loguru import logger
 from data_pipeline.crawler import WebScraper, BaseScraper
 import re
+from tqdm import tqdm
 
 
 def configure_logger() -> None:
@@ -32,15 +33,17 @@ def main():
     configure_logger()
     source_scraper = BaseScraper()
     links = source_scraper.extract_tbody_links()
-    for link in links:
+    for link in tqdm(links, desc="Scraping links", total=len(links)):
         logger.info(f"Scraping link: {link}")
         scraper = WebScraper(
             base_url=link,
             allowed_domain=re.search(r"https?://(.[^/]*)/*", link).group(1),
-            min_delay=0.0,
-            max_delay=0.0,
+            min_delay=1.0,
+            max_delay=3.0,
         )
         scraper.scrape()
+
+        del scraper
 
 
 if __name__ == "__main__":
