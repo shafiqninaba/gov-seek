@@ -1,7 +1,9 @@
 [project]
 dependencies = [
   "beautifulsoup4>=4.13.3",
+  "dotenv>=0.9.9",
   "ipykernel>=6.29.5",
+  "langchain-openai>=0.3.7",
   "loguru>=0.7.3",
   "pre-commit>=4.1.0",
   "requests>=2.32.3",
