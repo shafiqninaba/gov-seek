@@ -40,6 +40,7 @@ def main():
             allowed_domain=re.search(r"https?://(.[^/]*)/*", link).group(1),
             min_delay=1.0,
             max_delay=3.0,
+            max_depth=10,
         )
         scraper.scrape()
 

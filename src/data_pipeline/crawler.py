@@ -41,11 +41,16 @@ class BaseScraper:
                     "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0",
                 }
             )
-            response = requests.get(url, headers=headers)
+            response = requests.get(
+                url, headers=headers, timeout=20
+            )  # Added 20 second timeout
             response.raise_for_status()
 
             return bs4.BeautifulSoup(response.text, "html.parser")
 
+        except requests.Timeout:
+            logger.error(f"Request timed out for {url}")
+            return None
         except Exception as e:
             logger.error(f"Failed to fetch {url}: {e}")
             return None
@@ -87,6 +92,7 @@ class WebScraper(BaseScraper):
         allowed_domain: str,
         min_delay: float = 1.0,
         max_delay: float = 3.0,
+        max_depth: int = 3,
     ):
         """Initialize WebScraper with base URL and allowed domain.
 
@@ -99,7 +105,7 @@ class WebScraper(BaseScraper):
         super().__init__(min_delay, max_delay)
         self.base_url = base_url
         self.allowed_domain = allowed_domain
-        self.links_to_visit = set()  # Initialize empty set for links
+        self.max_depth = max_depth
         self.visited_links = set()  # Make sure this is initialized too
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.json_filepath = f"data/{"".join([x if x.isalnum() else "_" for x in self.allowed_domain])}_{self.timestamp}.json"
@@ -154,7 +160,7 @@ class WebScraper(BaseScraper):
         text = re.sub(r"\s+", " ", text)
         return text.strip()
 
-    def scrape_recursively(self, url: str, depth: int = 0, max_depth: int = 3) -> None:
+    def scrape_recursively(self, url: str, depth: int = 0) -> None:
         """
         Recursively scrape pages while extracting content in the same pass.
 
@@ -163,6 +169,22 @@ class WebScraper(BaseScraper):
             depth: Current depth of recursion
             max_depth: Maximum depth to recurse
         """
+        # Check if URL points to a file
+        file_extensions = (
+            ".pdf",
+            ".doc",
+            ".docx",
+            ".xls",
+            ".xlsx",
+            ".zip",
+            ".rar",
+            ".mp3",
+            ".mp4",
+        )
+        if url.lower().endswith(file_extensions):
+            logger.debug(f"Skipping file URL: {url}")
+            return
+
         # Check if we've already visited this link or reached max links
         if url in self.visited_links:
             logger.debug(f"Already visited: {url}")
@@ -172,7 +194,7 @@ class WebScraper(BaseScraper):
                 logger.warning("Reached maximum number of links to scrape.")
                 self.logged_limits = True
             return
-        elif depth > max_depth:
+        elif depth > self.max_depth:
             if not self.logged_limits:
                 logger.warning("Reached maximum depth.")
                 self.logged_limits = True
@@ -195,7 +217,7 @@ class WebScraper(BaseScraper):
             href = link.get("href")
             if href and self.allowed_domain in href and href not in self.visited_links:
                 logger.debug(f"Found new link: {href}")
-                self.scrape_recursively(href, depth + 1, max_depth)
+                self.scrape_recursively(href, depth + 1)
 
     def scrape(self) -> None:
         """Main scraping method."""
