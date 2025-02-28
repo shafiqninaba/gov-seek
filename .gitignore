@@ -19,3 +19,6 @@ uv.lock
 
 # notebooks
 notebooks/
+
+# environment variables
+.env

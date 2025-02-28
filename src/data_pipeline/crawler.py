@@ -9,7 +9,6 @@ from loguru import logger
 from datetime import datetime
 import time
 import random
-from tqdm import tqdm
 import os
 
 
@@ -21,6 +20,7 @@ class BaseScraper:
         self.min_delay = min_delay
         self.max_delay = max_delay
         self.trusted_url = "https://www.gov.sg/trusted-sites"
+        self.logged_limits = False
 
     def get_page_content(self, url: str) -> Optional[bs4.BeautifulSoup]:
         """Fetch and parse webpage content.
@@ -41,11 +41,16 @@ class BaseScraper:
                     "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:52.0) Gecko/20100101 Firefox/52.0",
                 }
             )
-            response = requests.get(url, headers=headers)
+            response = requests.get(
+                url, headers=headers, timeout=20
+            )  # Added 20 second timeout
             response.raise_for_status()
 
             return bs4.BeautifulSoup(response.text, "html.parser")
 
+        except requests.Timeout:
+            logger.error(f"Request timed out for {url}")
+            return None
         except Exception as e:
             logger.error(f"Failed to fetch {url}: {e}")
             return None
@@ -87,6 +92,7 @@ class WebScraper(BaseScraper):
         allowed_domain: str,
         min_delay: float = 1.0,
         max_delay: float = 3.0,
+        max_depth: int = 3,
     ):
         """Initialize WebScraper with base URL and allowed domain.
 
@@ -99,9 +105,10 @@ class WebScraper(BaseScraper):
         super().__init__(min_delay, max_delay)
         self.base_url = base_url
         self.allowed_domain = allowed_domain
-        self.links_to_visit = set()  # Initialize empty set for links
+        self.max_depth = max_depth
         self.visited_links = set()  # Make sure this is initialized too
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.json_filepath = f"data/{"".join([x if x.isalnum() else "_" for x in self.allowed_domain])}_{self.timestamp}.json"
         logger.info(f"Initialized WebScraper for {self.base_url}")
         logger.info(f"Allowed domain: {self.allowed_domain}")
 
@@ -113,18 +120,16 @@ class WebScraper(BaseScraper):
             content: Cleaned text content of the page
         """
         try:
-            file_path = f"data/{"".join([x if x.isalnum() else "_" for x in self.allowed_domain])}_{self.timestamp}.json"
-
             # Create initial file with empty array if it doesn't exist
-            if not os.path.exists(file_path):
-                os.makedirs(os.path.dirname(file_path), exist_ok=True)
-                with open(file_path, "w") as f:
+            if not os.path.exists(self.json_filepath):
+                os.makedirs(os.path.dirname(self.json_filepath), exist_ok=True)
+                with open(self.json_filepath, "w") as f:
                     f.write("[\n")
 
             # Append the new content with proper JSON formatting
-            with open(file_path, "a") as f:
+            with open(self.json_filepath, "a") as f:
                 # Add comma if not first entry
-                if os.path.getsize(file_path) > 2:  # More than just "[\n"
+                if os.path.getsize(self.json_filepath) > 2:  # More than just "[\n"
                     f.write(",\n")
 
                 json.dump(
@@ -135,14 +140,13 @@ class WebScraper(BaseScraper):
         except IOError as e:
             logger.error(f"Failed to save data for {link}: {e}")
 
-    def __del__(self):
+    def close_json_file(self):
         """Destructor to close the JSON array when scraping is complete."""
         try:
-            file_path = f"data/data_{self.timestamp}.json"
-            if os.path.exists(file_path):
-                with open(file_path, "a") as f:
+            if os.path.exists(self.json_filepath):
+                with open(self.json_filepath, "a") as f:
                     f.write("\n]")
-        except IOError as e:
+        except Exception as e:
             logger.error(f"Failed to close JSON file: {e}")
 
     @staticmethod
@@ -156,85 +160,70 @@ class WebScraper(BaseScraper):
         text = re.sub(r"\s+", " ", text)
         return text.strip()
 
-    def find_all_links_to_visit(self, soup: bs4.BeautifulSoup) -> None:
+    def scrape_recursively(self, url: str, depth: int = 0) -> None:
         """
-        Find all links to visit on the page that match the allowed domain
-        and haven't been discovered yet.
+        Recursively scrape pages while extracting content in the same pass.
 
         Args:
-            soup: BeautifulSoup object of the current page
+            url: URL of the page to scrape
+            depth: Current depth of recursion
+            max_depth: Maximum depth to recurse
         """
-        # limit to 10 links
-        if len(self.links_to_visit) > 10:
+        # Check if URL points to a file
+        file_extensions = (
+            ".pdf",
+            ".doc",
+            ".docx",
+            ".xls",
+            ".xlsx",
+            ".zip",
+            ".rar",
+            ".mp3",
+            ".mp4",
+        )
+        if url.lower().endswith(file_extensions):
+            logger.debug(f"Skipping file URL: {url}")
             return
 
+        # Check if we've already visited this link or reached max links
+        if url in self.visited_links:
+            logger.debug(f"Already visited: {url}")
+            return
+        elif len(self.visited_links) > 10:
+            if not self.logged_limits:
+                logger.warning("Reached maximum number of links to scrape.")
+                self.logged_limits = True
+            return
+        elif depth > self.max_depth:
+            if not self.logged_limits:
+                logger.warning("Reached maximum depth.")
+                self.logged_limits = True
+            return
+
+        # Get and process the page content
+        soup = self.get_page_content(url)
         if not soup:
             return
 
-        # Find all links on current page
-        for link in soup.find_all("a"):
-            href = link.get("href")
-            # Only process new links within allowed domain
-            if href and self.allowed_domain in href and href not in self.links_to_visit:
-                self.links_to_visit.add(href)
-                logger.debug(f"Found new link: {href}")
+        # Extract and save the content
+        text_content = soup.get_text()
+        clean_content = self.clean_text(text_content)
+        self.save_content(url, clean_content)
+        self.visited_links.add(url)
+        logger.debug(f"Processed content for: {url}")
 
-                # Fetch and process the new page
-                new_soup = self.get_page_content(href)
-                if new_soup:
-                    self.find_all_links_to_visit(new_soup)
-
-    def extract_valid_links(self, soup: bs4.BeautifulSoup) -> List[str]:
-        """Extract valid links from the page that match the allowed domain.
-
-        Args:
-            soup: BeautifulSoup object of the current page
-
-        Returns:
-            List of valid links on the page
-        """
-        links = []
+        # Find and process all links on the current page
         for link in soup.find_all("a"):
             href = link.get("href")
             if href and self.allowed_domain in href and href not in self.visited_links:
-                links.append(href)
-                logger.debug(f"Found valid link: {href}")
-        return links
-
-    def process_link(self, link: str) -> None:
-        """Process a single link: fetch content, clean it, and save it.
-
-        Args:
-            link: URL of the page to
-        """
-        if link in self.visited_links:
-            logger.debug(f"Skipping already visited link: {link}")
-            return
-
-        soup = self.get_page_content(link)
-        if soup:
-            text_content = soup.get_text()
-            clean_content = self.clean_text(text_content)
-            self.save_content(link, clean_content)
-            self.visited_links.add(link)
+                logger.debug(f"Found new link: {href}")
+                self.scrape_recursively(href, depth + 1)
 
     def scrape(self) -> None:
         """Main scraping method."""
         logger.info(f"Starting scraping of website: {self.base_url}")
 
-        soup = self.get_page_content(self.base_url)
-        if not soup:
-            return
-
-        # Find all links recursively
-        logger.info("Recrusively finding all links to visit")
-        self.find_all_links_to_visit(soup)
-        logger.info(
-            f"Found {len(self.links_to_visit)} total links to process from {self.base_url}"
-        )
-
-        # Process all discovered links with progress bar
-        for link in tqdm(self.links_to_visit, desc="Processing links", unit="link"):
-            self.process_link(link)
-
-        logger.info(f"Scraping completed successfully for {self.base_url}")
+        # Start the recursive scraping from the base URL
+        self.scrape_recursively(self.base_url)
+        self.close_json_file()
+        logger.info(f"Scraping completed. Processed {len(self.visited_links)} pages.")
