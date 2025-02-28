@@ -22,3 +22,6 @@ notebooks/
 
 # environment variables
 .env
+
+# vector db
+vector_database/
