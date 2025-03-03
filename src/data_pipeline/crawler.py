@@ -10,6 +10,8 @@ from datetime import datetime
 import time
 import random
 import os
+from uuid import uuid4
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 class BaseScraper:
@@ -108,7 +110,7 @@ class WebScraper(BaseScraper):
         self.max_depth = max_depth
         self.visited_links = set()  # Make sure this is initialized too
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.json_filepath = f"data/{"".join([x if x.isalnum() else "_" for x in self.allowed_domain])}_{self.timestamp}.json"
+        self.json_filepath = f"data/scraped_data/{"".join([x if x.isalnum() else "_" for x in self.allowed_domain])}_{self.timestamp}.json"
         logger.info(f"Initialized WebScraper for {self.base_url}")
         logger.info(f"Allowed domain: {self.allowed_domain}")
 
@@ -133,7 +135,10 @@ class WebScraper(BaseScraper):
                     f.write(",\n")
 
                 json.dump(
-                    {"link": link, "text": content}, f, ensure_ascii=False, indent=2
+                    {"uuid": str(uuid4()), "link": link, "text": content},
+                    f,
+                    ensure_ascii=False,
+                    indent=2,
                 )
                 logger.debug(f"Saved cleaned content for: {link}")
 
@@ -207,10 +212,21 @@ class WebScraper(BaseScraper):
 
         # Extract and save the content
         text_content = soup.get_text()
-        clean_content = self.clean_text(text_content)
-        self.save_content(url, clean_content)
-        self.visited_links.add(url)
-        logger.debug(f"Processed content for: {url}")
+        cleaned_content = self.clean_text(text_content)
+
+        chunk_size = 1000
+        chunk_overlap = 100
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size, chunk_overlap=chunk_overlap
+        )
+
+        splits = text_splitter.split_text(cleaned_content)
+
+        for split_content in splits:
+            if split_content:
+                self.save_content(url, split_content)
+                self.visited_links.add(url)
+                logger.debug(f"Processed content for: {url}")
 
         # Find and process all links on the current page
         for link in soup.find_all("a"):
