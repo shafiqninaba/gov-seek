@@ -95,3 +95,16 @@ if __name__ == "__main__":
 
         logger.info(f"{batch_input_file_id} batch uploaded to OpenAI API")
         logger.info(f"Batch metadata: {batch_metadata}")
+
+        # Append batch metadata to JSON file
+        metadata_file = "data/batch_jobs/batch_metadata.json"
+        try:
+            with open(metadata_file, "r") as f:
+                existing_metadata = json.load(f)
+        except FileNotFoundError:
+            existing_metadata = []
+
+        existing_metadata.append(batch_metadata.model_dump())
+
+        with open(metadata_file, "w") as f:
+            json.dump(existing_metadata, f, indent=2)
