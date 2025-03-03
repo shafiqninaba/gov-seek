@@ -17,16 +17,17 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-if prompt := st.chat_input("Ask me anything about Singapore government services"):
+if prompt := st.chat_input("Ask me anything"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
         with st.spinner("Retrieving information..."):
-            answer, sources = pipeline.run(prompt)
+            answer, sources, _ = pipeline.run(prompt)
 
         st.markdown(answer)
+        sources = list(set(sources))
         if sources:
             st.subheader("Sources:")
             for source in sources:

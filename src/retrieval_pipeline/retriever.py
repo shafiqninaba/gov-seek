@@ -15,7 +15,7 @@ import os
 from langchain_openai import OpenAIEmbeddings
 from dotenv import load_dotenv
 from langgraph.checkpoint.memory import MemorySaver
-from typing import List, TypedDict
+from typing import List, TypedDict, Optional
 from langchain_core.messages import AIMessage
 from uuid import uuid4
 
@@ -83,9 +83,10 @@ class RetrievalPipeline:
             # Format into prompt
             docs_content = "\n\n".join(doc.content for doc in tool_messages)
             system_message_content = (
-                "You are an assistant for question-answering tasks. "
+                "You are GovSeek, an assistant for question-answering tasks."
                 "Use the following pieces of retrieved context to answer "
-                "the question. If you don't know the answer, say that you "
+                "the question. The context were retrieved from the links found in https://www.gov.sg/trusted-sites. "
+                "If you don't know the answer, say that you "
                 "don't know."
                 "\n\n"
                 f"{docs_content}"
@@ -125,7 +126,10 @@ class RetrievalPipeline:
             # Create a new AIMessage with the updated content
             response_with_sources = AIMessage(content=response_content)
 
-            return {"messages": [response_with_sources]}
+            return {
+                "messages": [response_with_sources],
+                "config": {"sources": sources},  # Store sources in config
+            }
 
         self.generate = generate
 
@@ -145,10 +149,10 @@ class RetrievalPipeline:
         self.memory = MemorySaver()
         self.graph = self.graph_builder.compile(checkpointer=self.memory)
 
-    def run(self, input_message: str):
-        """Run the retrieval pipeline."""
-        # Specify an ID for the thread
-        config = {"configurable": {"thread_id": str(uuid4())}}
+    def run(self, input_message: str, thread_id: Optional[str] = None):
+        """Run the retrieval pipeline with optional thread_id for continued conversations."""
+        # Use provided thread_id or generate a new one
+        config = {"configurable": {"thread_id": thread_id or str(uuid4())}}
 
         full_response = ""
         sources = []
@@ -167,10 +171,23 @@ class RetrievalPipeline:
                 ):
                     sources = message.additional_kwargs["sources"]
 
-        return full_response, sources
+        return full_response, sources, config["configurable"]["thread_id"]
+
+    def get_conversation_history(self, thread_id: str):
+        """Retrieve previous conversation by thread_id."""
+        if thread_id in self.memory.checkpoints:
+            return self.memory.checkpoints[thread_id]
+        return None
 
 
 if __name__ == "__main__":
     # Example usage:
     pipeline = RetrievalPipeline()
-    pipeline.run("where can i workout in tampines")
+    first_response, sources, thread_id = pipeline.run("where can i workout in tampines")
+    print(f"First response: {first_response}\nThread ID: {thread_id}")
+
+    # Continue the conversation
+    second_response, sources, _ = pipeline.run(
+        "what are the opening hours", thread_id=thread_id
+    )
+    print(f"Second response: {second_response}")
