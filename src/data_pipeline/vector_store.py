@@ -27,7 +27,7 @@ class VectorStore:
             raise ValueError("QDRANT_URL environment variable is not set")
 
         qdrant_url = os.environ.get("QDRANT_URL")
-        self.client = QdrantClient(path=qdrant_url)
+        self.client = QdrantClient(url=qdrant_url)
 
         self.client.create_collection(
             collection_name="demo_collection",
