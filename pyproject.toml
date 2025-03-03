@@ -4,9 +4,12 @@ dependencies = [
   "dotenv>=0.9.9",
   "fastparquet>=2024.11.0",
   "ipykernel>=6.29.5",
+  "langchain>=0.3.19",
+  "langchain-community>=0.3.18",
   "langchain-openai>=0.3.7",
   "langchain-qdrant>=0.2.0",
   "langchain-text-splitters>=0.3.6",
+  "langgraph>=0.3.2",
   "loguru>=0.7.3",
   "lxml>=5.3.1",
   "openai>=1.65.1",
@@ -16,6 +19,7 @@ dependencies = [
   "qdrant-client>=1.13.2",
   "requests>=2.32.3",
   "setuptools>=75.8.0",
+  "streamlit>=1.42.2",
   "tiktoken>=0.9.0",
   "tqdm>=4.67.1"
 ]
@@ -33,3 +37,7 @@ ignore-init-module = true
 ignore-regex = []
 verbose = 1
 whitelist-regex = []
+
+[tool.setuptools.packages.find]
+namespaces = false
+where = ["src"]
