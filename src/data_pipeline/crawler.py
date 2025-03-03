@@ -11,6 +11,7 @@ import time
 import random
 import os
 from uuid import uuid4
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 
 class BaseScraper:
@@ -211,15 +212,21 @@ class WebScraper(BaseScraper):
 
         # Extract and save the content
         text_content = soup.get_text()
-        clean_content = self.clean_text(text_content)
+        cleaned_content = self.clean_text(text_content)
 
-        if clean_content:
-            self.save_content(url, clean_content)
-        else:
-            logger.debug(f"No content extracted for: {url}")
-            return
-        self.visited_links.add(url)
-        logger.debug(f"Processed content for: {url}")
+        chunk_size = 1000
+        chunk_overlap = 100
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=chunk_size, chunk_overlap=chunk_overlap
+        )
+
+        splits = text_splitter.split_text(cleaned_content)
+
+        for split_content in splits:
+            if split_content:
+                self.save_content(url, split_content)
+                self.visited_links.add(url)
+                logger.debug(f"Processed content for: {url}")
 
         # Find and process all links on the current page
         for link in soup.find_all("a"):
