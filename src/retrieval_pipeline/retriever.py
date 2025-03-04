@@ -155,8 +155,6 @@ class RetrievalPipeline:
         # Use provided thread_id or generate a new one
         config = {"configurable": {"thread_id": thread_id}}
 
-        print(config["configurable"]["thread_id"])
-
         full_response = ""
         sources = []
         for step in self.graph.stream(
