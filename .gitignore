@@ -5,13 +5,16 @@ build/
 dist/
 wheels/
 *.egg-info
+
+data/**
+!data/**/
 !data/**/.gitkeep
 
 # Virtual environments
 .venv
 
-data/**/
-logs/
+
+logs/**
 .vscode/
 
 # uv
