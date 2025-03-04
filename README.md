@@ -1,16 +1,13 @@
 <a id="readme-top"></a>
 <!-- PROJECT SHIELDS -->
 [![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
 [![LinkedIn][linkedin-shield]][linkedin-url]
 
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
   <a href="https://github.com/shafiqninaba/gov-seek">
-    <img src="images/logo.png" alt="Logo" width="100" height="100">
+    <img src="assets/images/logo.png" alt="Logo" width="100" height="100">
   </a>
 <h3 align="center">GovSeek</h3>
 
@@ -26,32 +23,35 @@
 </div>
 
 <!-- TABLE OF CONTENTS -->
+<!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
   <ol>
     <li>
+    <a href="#built-with">Built With</a>
+    </li>
+    <li>
       <a href="#about-the-project">About The Project</a>
       <ul>
-        <li><a href="#built-with">Built With</a></li>
+        <li><a href="#description">Description</a></li>
+        <li><a href="#data-pipeline">Data Pipeline</a></li>
+        <li><a href="#retrieval-and-question-answering-pipeline">Retrieval and Question Answering Pipeline</a></li>
       </ul>
     </li>
     <li>
       <a href="#getting-started">Getting Started</a>
       <ul>
         <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
+        <li><a href="#installation-and-commands">Installation and Commands</a></li>
       </ul>
     </li>
     <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
+    <li><a href="#demo">Demo</a></li>
     <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
 
-### Built With
+## Built With
 
 * [![Python][Python-img]][Python-url]
 * [![uv][uv-img]][uv-url]
@@ -149,7 +149,7 @@ To get a local copy up and running follow these simple steps.
 - [OpenAI API](https://platform.openai.com/) Key
 - [Qdrant API](https://qdrant.tech/) Key
 
-### Installation
+### Installation and Commands
 
 1. Clone the repo
    ```sh
@@ -170,14 +170,41 @@ To get a local copy up and running follow these simple steps.
    git remote set-url origin shafiqninaba/gov-seek
    git remote -v # confirm the changes
    ```
+5. Scrape data from trusted sites
+   ```sh
+   uv run src/scrape_websites.py
+   ```
+6. Process data and generate embeddings via OpenAI Batch API
+   ```sh
+    uv run src/data_pipeline/batch_embeddings.py
+    ```
+
+7. Retrieve the completed batches. You can reference the batch ID from the output of the previous command. Follow the instructions [here](https://platform.openai.com/docs/guides/batch#5-retrieve-the-results) to retrieve the results.
+
+8. Combine data and embeddings
+    ```sh
+      uv run src/data_pipeline/combine_embeddings.py
+      ```
+9. Populate the vector store
+    ```sh
+    uv run src/data_pipeline/vector_store.py
+    ```
+10. Run the Streamlit application
+    ```sh
+    uv run src/streamlit_app.py
+    ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-<!-- USAGE EXAMPLES -->
-## Usage
+<!-- DEMO -->
+## Demo
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+<div align="center">
+  <img src="assets/demo.gif" alt="Demo">
+</div>
+
+The demo highlights the chatbot's ability to retrieve information from the vector store and generate responses based on the user's queries. The chatbot also has memory capabilities to keep track of the conversation history and provide contextually relevant responses.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -204,7 +231,7 @@ Shafiq Ninaba | shafiqninaba@gmail.com | [LinkedIn](https://linkedin.com/in/shaf
 [issues-url]: https://github.com/shafiqninaba/gov-seek/issues
 [linkedin-shield]: https://img.shields.io/badge/-LinkedIn-black.svg?style=for-the-badge&logo=linkedin&colorB=555
 [linkedin-url]: https://linkedin.com/in/shafiq-ninaba
-[product-screenshot]: images/screenshot.png
+[product-screenshot]: assets/images/screenshot.png
 [LangChain-img]: https://img.shields.io/badge/LangChain-ffffff?logo=langchain&logoColor=green
 [LangChain-url]: https://www.langchain.com/
 [Python-img]: https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54
