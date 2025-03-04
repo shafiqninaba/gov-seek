@@ -5,12 +5,12 @@ build/
 dist/
 wheels/
 *.egg-info
-!.gitkeep
+!data/**/.gitkeep
 
 # Virtual environments
 .venv
 
-data/
+data/**/
 logs/
 .vscode/
 
