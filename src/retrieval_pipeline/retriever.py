@@ -38,6 +38,7 @@ class RetrievalPipeline:
             embedding=self.embeddings,
             collection_name="demo_collection",
             url=os.environ.get("QDRANT_URL"),
+            api_key=os.environ.get("QDRANT_API_KEY"),
         )
 
         @tool(response_format="content_and_artifact")
