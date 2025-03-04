@@ -15,6 +15,9 @@ data/**
 
 
 logs/**
+!logs/**/
+!logs/**/.gitkeep
+
 .vscode/
 
 # uv
