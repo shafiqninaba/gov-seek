@@ -15,7 +15,7 @@ import os
 from langchain_openai import OpenAIEmbeddings
 from dotenv import load_dotenv
 from langgraph.checkpoint.memory import MemorySaver
-from typing import List, TypedDict, Optional
+from typing import List, TypedDict
 from langchain_core.messages import AIMessage
 from uuid import uuid4
 
@@ -149,10 +149,12 @@ class RetrievalPipeline:
         self.memory = MemorySaver()
         self.graph = self.graph_builder.compile(checkpointer=self.memory)
 
-    def run(self, input_message: str, thread_id: Optional[str] = None):
+    def run(self, input_message: str, thread_id: str):
         """Run the retrieval pipeline with optional thread_id for continued conversations."""
         # Use provided thread_id or generate a new one
-        config = {"configurable": {"thread_id": thread_id or str(uuid4())}}
+        config = {"configurable": {"thread_id": thread_id}}
+
+        print(config["configurable"]["thread_id"])
 
         full_response = ""
         sources = []
@@ -171,7 +173,7 @@ class RetrievalPipeline:
                 ):
                     sources = message.additional_kwargs["sources"]
 
-        return full_response, sources, config["configurable"]["thread_id"]
+        return full_response, sources
 
     def get_conversation_history(self, thread_id: str):
         """Retrieve previous conversation by thread_id."""
@@ -182,12 +184,11 @@ class RetrievalPipeline:
 
 if __name__ == "__main__":
     # Example usage:
+    thread_id = str(uuid4())
     pipeline = RetrievalPipeline()
-    first_response, sources, thread_id = pipeline.run("where can i workout in tampines")
+    first_response, sources = pipeline.run("hi my name is shafiq", thread_id)
     print(f"First response: {first_response}\nThread ID: {thread_id}")
 
     # Continue the conversation
-    second_response, sources, _ = pipeline.run(
-        "what are the opening hours", thread_id=thread_id
-    )
+    second_response, sources = pipeline.run("what is my name", thread_id)
     print(f"Second response: {second_response}")
