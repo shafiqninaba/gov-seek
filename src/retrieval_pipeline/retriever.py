@@ -17,8 +17,6 @@ from dotenv import load_dotenv
 from langgraph.checkpoint.memory import MemorySaver
 from typing import List, TypedDict
 from langchain_core.messages import AIMessage
-from uuid import uuid4
-from loguru import logger
 import re
 
 load_dotenv()
@@ -151,13 +149,11 @@ class RetrievalPipeline:
         ):
             if "messages" in step:
                 message = step["messages"][-1]
-                logger.info(message)
                 if hasattr(message, "content"):
                     full_response = message.content
                 if hasattr(message, "additional_kwargs"):
                     sources = message.additional_kwargs.get("sources", [])
 
-        logger.info(f"Sources: {sources}")
         return full_response, sources
 
     def get_conversation_history(self, thread_id: str):
@@ -165,15 +161,3 @@ class RetrievalPipeline:
         if thread_id in self.memory.checkpoints:
             return self.memory.checkpoints[thread_id]
         return None
-
-
-if __name__ == "__main__":
-    # Example usage:
-    thread_id = str(uuid4())
-    pipeline = RetrievalPipeline()
-    first_response, sources = pipeline.run("hi my name is shafiq", thread_id)
-    logger.info(f"First response: {first_response}\nThread ID: {thread_id}")
-
-    # Continue the conversation
-    second_response, sources = pipeline.run("what is my name", thread_id)
-    logger.info(f"Second response: {second_response}")
