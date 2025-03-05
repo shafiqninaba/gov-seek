@@ -78,8 +78,6 @@ flowchart TD
         B -->C1[OpenAI Batch API]
     end
 
-
-
     C1 -->|Generate Embeddings| C[(Qdrant<br>Vector Store)]
 
     D[Streamlit UI] <-->|Query/Response| E[RAG Pipeline]
@@ -93,10 +91,10 @@ flowchart TD
     A --> |Scrapes| G((gov.sg<br>Trusted Sites))
     H[Heroku] -->|Hosts| D
 
-    style G fill:#lightgrey,stroke:#333,stroke-width:1px
-    style C fill:#bbf,stroke:#333,stroke-width:2px
-    style F fill:#fbf,stroke:#333,stroke-width:2px
-    style D fill:#bfb,stroke:#333,stroke-width:2px
+    style G fill:#444,stroke:#eee,stroke-width:1px,color:#eee
+    style C fill:#448,stroke:#eee,stroke-width:2px,color:#eee
+    style F fill:#844,stroke:#eee,stroke-width:2px,color:#eee
+    style D fill:#484,stroke:#eee,stroke-width:2px,color:#eee
 ```
 
 GovSeek's backend mainly consists of two parts:
