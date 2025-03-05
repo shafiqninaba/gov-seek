@@ -78,9 +78,17 @@ else:
             st.markdown(message["content"])
             if message["role"] == "assistant" and "sources" in message:
                 sources = message["sources"]
+                if sources:
+                    st.subheader("Sources:")
+                    for source in sources:
+                        st.markdown(f"- {source}")
 
     if prompt := st.chat_input("Ask me anything"):
+        # Display user message immediately
         st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
         with st.spinner("Retrieving relevant information..."):
             answer, sources = st.session_state.pipeline.run(
                 prompt, st.session_state.thread_id
@@ -89,7 +97,7 @@ else:
             {
                 "role": "assistant",
                 "content": answer,
-                "sources": list(set(sources)) if sources else [],
+                "sources": sources if sources else None,
             }
         )
 
