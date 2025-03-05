@@ -85,7 +85,7 @@ flowchart TD
     C -->|Retrieve Context| E
     subgraph "Retrieval System"
 
-        E <-->|Generate Answer| F[LLMGPT-4o-mini]
+        E <-->|Generate Answer| F[GPT-4o-mini]
     end
 
     A --> |Scrapes| G((gov.sg<br>Trusted Sites))
