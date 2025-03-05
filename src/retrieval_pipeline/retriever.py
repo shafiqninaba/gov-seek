@@ -18,6 +18,8 @@ from langgraph.checkpoint.memory import MemorySaver
 from typing import List, TypedDict
 from langchain_core.messages import AIMessage
 from uuid import uuid4
+from loguru import logger
+import re
 
 load_dotenv()
 
@@ -46,10 +48,7 @@ class RetrievalPipeline:
             """Retrieve information related to a query."""
             retrieved_docs = self.vector_store.similarity_search(query, k=2)
             serialized = "\n\n".join(
-                (
-                    f"Source: {doc.metadata.get("source","Unknown")}\n"
-                    f"Content: {doc.page_content}"
-                )
+                (f"Source: {doc.metadata['source']}\n" f"Content: {doc.page_content}")
                 for doc in retrieved_docs
             )
             return serialized, retrieved_docs
@@ -83,6 +82,14 @@ class RetrievalPipeline:
 
             # Format into prompt
             docs_content = "\n\n".join(doc.content for doc in tool_messages)
+
+            # find the links in the content located in "Source: {doc.metadata['source']}\n"
+            links = re.findall(r"(?<=Source: ).*?(?=\n)", docs_content)
+            links = list(set(links))
+
+            # remove the "Source: {doc.metadata['source']}\n" from the content
+            docs_content = re.sub(r"Source: .*?\n", "", docs_content)
+
             system_message_content = (
                 "You are GovSeek, an assistant for question-answering tasks."
                 "Use the following pieces of retrieved context to answer "
@@ -103,33 +110,13 @@ class RetrievalPipeline:
             # Run
             response = self.llm.invoke(prompt)
 
-            # Extract sources from tool messages
-            sources = []
-            for tool_message in tool_messages:
-                if hasattr(tool_message, "content"):
-                    content = tool_message.content
-                    sources_list = content.split("Source: ")[1:]
-                    for source_str in sources_list:
-                        source = source_str.split("\n")[0].strip()
-                        if source != "Unknown":
-                            sources.append(source)
-
-            # Append sources to the response
-            if sources:
-                response_content = (
-                    response.content
-                    + "\n\nSources:\n"
-                    + "\n".join(f"- {source}" for source in sources)
-                )
-            else:
-                response_content = response.content
-
             # Create a new AIMessage with the updated content
-            response_with_sources = AIMessage(content=response_content)
+            response_with_sources = AIMessage(
+                content=response.content, additional_kwargs={"sources": links}
+            )
 
             return {
                 "messages": [response_with_sources],
-                "config": {"sources": sources},  # Store sources in config
             }
 
         self.generate = generate
@@ -164,14 +151,13 @@ class RetrievalPipeline:
         ):
             if "messages" in step:
                 message = step["messages"][-1]
+                logger.info(message)
                 if hasattr(message, "content"):
                     full_response = message.content
-                if (
-                    hasattr(message, "additional_kwargs")
-                    and "sources" in message.additional_kwargs
-                ):
-                    sources = message.additional_kwargs["sources"]
+                if hasattr(message, "additional_kwargs"):
+                    sources = message.additional_kwargs.get("sources", [])
 
+        logger.info(f"Sources: {sources}")
         return full_response, sources
 
     def get_conversation_history(self, thread_id: str):
@@ -186,8 +172,8 @@ if __name__ == "__main__":
     thread_id = str(uuid4())
     pipeline = RetrievalPipeline()
     first_response, sources = pipeline.run("hi my name is shafiq", thread_id)
-    print(f"First response: {first_response}\nThread ID: {thread_id}")
+    logger.info(f"First response: {first_response}\nThread ID: {thread_id}")
 
     # Continue the conversation
     second_response, sources = pipeline.run("what is my name", thread_id)
-    print(f"Second response: {second_response}")
+    logger.info(f"Second response: {second_response}")
