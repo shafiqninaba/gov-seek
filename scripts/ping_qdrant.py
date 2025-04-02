@@ -1,6 +1,7 @@
 """Github Action script to ping Qdrant vector store to keep the free tier cloud instance alive."""
 
 import os
+import sys
 from langchain_qdrant import QdrantVectorStore
 from langchain_openai import OpenAIEmbeddings
 
@@ -27,4 +28,5 @@ def ping_qdrant():
 
 
 if __name__ == "__main__":
-    ping_qdrant()
+    success = ping_qdrant()
+    sys.exit(0 if success else 1)
