@@ -14,15 +14,12 @@
   <p align="center">
     Proof-of-concept for a RAG-based chatbot for government services
     <br />
-    <a href="https://gov-seek-e2a21ca71a09.herokuapp.com/">View Demo</a> (message me on <a href="https://linkedin.com/in/shafiq-ninaba">LinkedIn</a> for login password)
-    <br>
     <a href="https://github.com/shafiqninaba/gov-seek/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
     &middot;
     <a href="https://github.com/shafiqninaba/gov-seek/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a>
   </p>
 </div>
 
-<!-- TABLE OF CONTENTS -->
 <!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
@@ -67,7 +64,7 @@
 
 [![Product Name Screen Shot][product-screenshot]](https://gov-seek-e2a21ca71a09.herokuapp.com/)
 
-This is a personal project to demonstrate the use of Retrieval-Augmented Generation (RAG) for a chatbot that helps users find more information about anything found in https://www.gov.sg/trusted-sites. The chatbot is built using LangChain, OpenAI's GPT-4o-mini for the chat model and Qdrant for the vector store. The chatbot is hosted on Heroku and can be accessed [here](https://gov-seek-e2a21ca71a09.herokuapp.com/). The chatbot is password-protected, so please message me on [LinkedIn](https://linkedin.com/in/shafiq-ninaba) for the password.
+This is a personal project to demonstrate the use of Retrieval-Augmented Generation (RAG) for a chatbot that helps users find more information about anything found in https://www.gov.sg/trusted-sites. The chatbot is built using LangChain, OpenAI's GPT-4o-mini for the chat model and Qdrant for the vector store.
 
 ### Description
 
